@@ -4,12 +4,13 @@ require './lib/parser'
 require './lib/responder'
 
 class HttpServer
-  attr_reader :tcp_server, :client, :open, :hello_count
+  attr_reader :tcp_server, :client, :open, :hello_count, :shutdown_count
 
   def initialize
     @tcp_server = TCPServer.new(9292)
     @open = true
     @hello_count = 0
+    @shutdown_count = 0
   end
 
   def start
@@ -24,14 +25,13 @@ class HttpServer
       end
 
       puts "Got this request:"
-      # response = Responder.new
-      # response.parse(request_lines)
       parser = Parser.new(request_lines)
       response = parser.parse
       path_response = check_path(response["Path: "])
+
       puts "Sending response."
       # response = "<pre>" + request_lines.join("\n") + "</pre>"
-      output = "<pre>#{path_response}</pre><pre>#{response}</pre>"
+      output = "#{path_response}" + "<pre>" + "#{response}" + "</pre>"
       headers = ["http/1.1 200 ok",
                 "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
                 "server: ruby",
@@ -45,7 +45,10 @@ class HttpServer
       puts "\nResponse complete, exiting."
       # hello_count += 1
       count += 1
-      if count > 4
+      if @shutdown_count == 12
+        tcp_server.close
+      end
+      if count > 20
         tcp_server.close
       else
         client.close
@@ -56,13 +59,20 @@ class HttpServer
 
   def check_path(path)
     if path == "/hello"
-      "<h1>Hello! #{hello_count}</h1>"
       @hello_count += 1
+      "<h1>Hello! #{hello_count}</h1>"
     elsif path == '/datetime'
       time = Time.new
-      "<h1>#{time.strftime("%l:%M %p on %A, %d %b %Y")}</h1>"
+      "<h2>#{time.strftime("%l:%M %p on %A, %d %b %Y")}</h2>"
     elsif path == '/shutdown'
-    #   path
+      @shutdown_count += 1
+      "<h2>Total Requests #{shutdown_count}</h2>"
+    elsif "/kitten"
+      # "<img src = 'http://placekitten.com/500/500'>"
+    elsif "/word_search"
+      "<h1>WORD SEARCH</h1>"
+    else
+      ""
     end
   end
 end
