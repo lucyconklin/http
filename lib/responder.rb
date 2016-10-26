@@ -1,11 +1,6 @@
 require './lib/parser'
 
 class Responder
-  attr_reader :request_lines
-
-  # def initialize(request_lines)
-  #   @request_lines = request_lines
-  # end
 
   def parse(request_lines)
     parser = Parser.new(request_lines)
