@@ -29,12 +29,10 @@ class Parser
     lines["Origin: "] = origin
     accept = @request_lines[6].split[1]
     lines["Accept: "] = accept
-    # binding.pry
     if request_lines[0].split(' ')[1].include?('?')
       param = request_lines[0].split(' ')[1].split('?')[1].split('=')[1]
     end
     lines["Param: "] = param
-
     return lines
   end
 

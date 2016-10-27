@@ -19,7 +19,6 @@ class HttpServer
 
   def start
     puts "Ready for a request"
-
     count = 0
     loop do
       @client = tcp_server.accept
@@ -27,7 +26,7 @@ class HttpServer
       while line = client.gets and !line.chomp.empty?
         request_lines << line.chomp
       end
-      puts "Got this request:"
+      puts "Got request"
       parser = Parser.new(request_lines)
       @parsed_response = parser.parse
       path_response = check_path(parsed_response["Path: "])
@@ -37,14 +36,12 @@ class HttpServer
         word_search = WordSearch.new
         word_response = word_search.search(parsed_response["Param: "])
       end
-      # binding.pry
 
       if parsed_response["Path: "] == "/game_start"
         @parsed_response["Verb: "] = "POST"
       end
 
       formatted_response = parsed_response.to_a.join("<br>")
-
 
       puts "Sending response."
       @output = "<html><head></head><body>" + "<h1>#{word_response}</h1>"+ "#{path_response}" + "<pre>" "#{formatted_response}" + "</pre>" + "</body></html>"
@@ -54,7 +51,7 @@ class HttpServer
       get_headers(verb, path)
       client.puts output
 
-      puts "\nResponse complete, exiting."
+      puts "Response complete, exiting.\n"
       count += 1
 
       if @shutdown_count == 12
@@ -108,7 +105,9 @@ class HttpServer
     elsif path == "/kitten"
       "<img src = 'http://placekitten.com/500/500'>"
     elsif path == "/god"
-      "<img src = 'gif.gif'>"
+      "<img src = 'https://media.giphy.com/media/G3fPad8N68GfS/giphy.gif'>"
+    elsif path == "/dinosaur"
+      "<img src = 'http://www.reactiongifs.com/r/2013/06/Mother-of_God.gif'>"
     elsif path.include?("/word_search")
       "<h1> WORD SEARCH </h1>"
     elsif path == "/game_start"
@@ -124,7 +123,6 @@ class HttpServer
   end
 
   def get_post_content
-    # binding.pry
     content_length = @request_lines.length
     @clent.read content_length.to_i
   end

@@ -13,7 +13,7 @@ attr_reader :guess, :guesses, :random_number
   end
 
   def start
-    
+
   end
 
   def random_number
@@ -26,16 +26,12 @@ attr_reader :guess, :guesses, :random_number
     @guess = guess
     if guess > 100 || guess < 0
       return 'Try again, not in range'
-      #accept another response
     elsif guess < @random_number
       return "Your guess of #{guess} was too low"
-      #accept another guess
     elsif guess > @random_number
       return "Your guess of #{guess} was too high"
-      #accept another guess
     elsif guess == @random_number
       return "Great Job #{guess} was correct and you win!"
-      #end game
     end
     log_guess(@guess)
   end
