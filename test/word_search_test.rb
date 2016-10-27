@@ -20,4 +20,14 @@ class WordSearchTest < Minitest::Test
     result = word_search.search("bear")
     assert_equal "bear is a known word", result
   end
+
+  def test_it_can_test_an_unknown_word
+    result = word_search.search("LOL")
+    assert_equal "LOL is not a known word", result
+  end
+
+  def test_it_can_handle_a_blank_string
+    result = word_search.search("")
+    assert_equal " is not a known word", result
+  end
 end

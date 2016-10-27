@@ -51,7 +51,6 @@ class HttpServer
 
       verb = parsed_response["Verb: "]
       path = parsed_response["Path: "]
-      # binding.pry
       get_headers(verb, path)
       client.puts output
 
@@ -72,8 +71,15 @@ class HttpServer
   end
 
   def get_headers(verb, path)
-    if verb == "POST" && path == "/game"
+    if verb == "POST" && path == "/game_start"
       headers = ["http/1.1 302 Found",
+                "location: http://127.0.0.1:9292/game",
+                "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
+                "server: ruby",
+                "content-type: text/html; charset=iso-8859-1",
+                "content-length: #{output.length}\r\n\r\n"].join("\r\n")
+    elsif verb == "GET" && path == "/game"
+      ["http/1.1 302 Found",
                 "location: http://127.0.0.1:9292/game",
                 "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
                 "server: ruby",
@@ -102,19 +108,25 @@ class HttpServer
     elsif path == "/kitten"
       "<img src = 'http://placekitten.com/500/500'>"
     elsif path == "/god"
-
+      "<img src = 'gif.gif'>"
     elsif path.include?("/word_search")
       "<h1> WORD SEARCH </h1>"
     elsif path == "/game_start"
       client.puts "<pre>Good luck!</pre>"
       game = Game.new
       game.start
-
+      get_post_content
     elsif path == "/game"
-      #continue the game
+      game.interface
     else
       "something else"
     end
+  end
+
+  def get_post_content
+    # binding.pry
+    content_length = @request_lines.length
+    @clent.read content_length.to_i
   end
 end
 

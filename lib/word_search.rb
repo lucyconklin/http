@@ -19,9 +19,9 @@ class WordSearch
     dictionary
   end
 
-  def search(param)
+  def search(param)  
     dictionary = load_dictionary
-    if dictionary[param]
+    if dictionary[param.downcase]
       result = "#{param} is a known word"
     else
       result = "#{param} is not a known word"
