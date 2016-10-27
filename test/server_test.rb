@@ -1,5 +1,5 @@
 gem 'minitest'
-require './lib/server'
+# require './lib/server'
 require 'minitest/autorun'
 require 'minitest/pride'
 require 'pry'
@@ -7,17 +7,13 @@ require 'faraday'
 
 class ServerTest < Minitest::Test
 
-  def setup
-    server = Faraday.get('http://127.0.0.1:9292/')
-  end
+ def test_server_can_listen
+   response = Faraday.get("http://localhost:9292")
+   assert_equal 200, response.status
+ end
 
-  def test_server_listens_to_port
-  end
-
-  def test_server_keeps_track_of_requests
-  end
-
-  def test_200_status
-    assert_equal 200, server.status
-  end
+ def test_server_returns_hello_world_count
+   response = Faraday.get("http://localhost:9292/hello")
+   assert_equal 200, response.body
+ end
 end
