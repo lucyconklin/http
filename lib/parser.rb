@@ -27,7 +27,11 @@ class Parser
     lines["Port: "] = port
     origin = @request_lines[1].split(':')[1]
     lines["Origin: "] = origin
-    accept = @request_lines[6].split[1]
+    if path.include?("/word_search")
+      accept = "application/json"
+    else
+      accept = @request_lines[6].split[1]
+    end
     lines["Accept: "] = accept
     if request_lines[0].split(' ')[1].include?('?')
       param = request_lines[0].split(' ')[1].split('?')[1].split('=')[1]

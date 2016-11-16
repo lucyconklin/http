@@ -5,6 +5,7 @@ require './lib/parser'
 require './lib/game'
 require './lib/word_search'
 require './lib/path'
+require './lib/header_generator'
 
 class HttpServer
   attr_reader :tcp_server,
@@ -40,12 +41,11 @@ class HttpServer
         request_lines << line.chomp
       end
       @content_length = request_lines[3].split(":")[1].to_i
-      http_accept = request_lines[6].split(":")[1].strip
       puts "Got request"
-      parser = Parser.new(request_lines)
-      @parsed_response = parser.parse
+      @parsed_response = Parser.new(request_lines).parse
       path = parsed_response["Path: "]
       verb = parsed_response["Verb: "]
+      http_accept = parsed_response["Accept: "]
       param = parsed_response["Param: "]
         if path == "/game_start" || path == "/game"
           path_response = game_controller(verb, path)
@@ -55,9 +55,7 @@ class HttpServer
           path_response = path_handler.direct_path
           path_status = path_handler.status_code
         end
-
       formatted_response = format_response(parsed_response)
-
       puts "Sending response."
       @output = "<html><head></head><body>
                 #{path_response}
@@ -67,35 +65,10 @@ class HttpServer
       verb = parsed_response["Verb: "]
       path = parsed_response["Path: "]
       accept = parsed_response["Accept: "]
-      get_headers(verb, path)
+      headers = HeaderGenerator.new(verb, path, output.length)
       client.puts output
-      # client.puts get_headers(verb, path)
       puts "Response complete, exiting.\n"
       open_or_close
-    end
-  end
-
-  def get_headers(verb, path)
-    if verb == "POST" && path == "/game_start"
-      headers = ["http/1.1 302 Found",
-                "location: http://127.0.0.1:9292/game",
-                "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-                "server: ruby",
-                "content-type: text/html; charset=iso-8859-1",
-                "content-length: #{output.length}\r\n\r\n"].join("\r\n")
-    elsif verb == "GET" && path == "/game"
-      ["http/1.1 302 Found",
-                "location: http://127.0.0.1:9292/game",
-                "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-                "server: ruby",
-                "content-type: text/html; charset=iso-8859-1",
-                "content-length: #{output.length}\r\n\r\n"].join("\r\n")
-    else
-      headers = ["http/1.1 200 ok",
-                "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-                "server: ruby",
-                "content-type: text/html; charset=iso-8859-1",
-                "content-length: #{output.length}\r\n\r\n"].join("\r\n")
     end
   end
 
@@ -124,8 +97,6 @@ class HttpServer
   end
 
   def get_post_content
-    #pull out content_length from request_lines
-    #split on guess and number
     output = @client.read(content_length)
     output.split("=")[1].to_i
   end
