@@ -1,8 +1,14 @@
 require './lib/game'
 require 'json'
+require './lib/json_response'
 
 class Path
-  attr_reader :server, :path, :param, :status_code, :game
+  attr_reader :server,
+              :path,
+              :verb,
+              :param,
+              :status_code,
+              :http_accept
 
   def initialize(path, verb, server, param = "", http_accept = "*/*")
     @server = server
@@ -22,23 +28,6 @@ class Path
       shutdown
     elsif path.include?("/word_search")
       word_search
-    # elsif @path == "/game_start" && @verb == "POST"
-    #   @status_code = "403 Forbidden" if @game == nil
-    #   @game = Game.new
-    #   server.client.puts @game.start(0)
-    #   server.client.puts @game.interface
-    #   server.client.puts "<pre>Good luck!</pre>"
-    #   @status_code = "301 Moved Permanently"
-    # elsif @path == "/game" && @verb == "GET"
-    #   # return "You need to start the Game!" if @game.nil?
-    #   binding.pry
-    #   @game.interface
-    #   @status_code = "200 OK"
-    # elsif @path == "/game" && @verb == "POST"
-    #   # return "You need to start the Game!" if @game.nil?
-    #   guess = server.get_post_content
-    #   game.start(guess)
-    #   @status_code = "301 Moved Permanently"
     elsif path == "/force_error"
       @status_code = "500 Internal Server Error"
       server.client.puts path_error
@@ -72,8 +61,11 @@ class Path
       word_response = word_search.search(@param)
       "<h1>#{word_response}</h1>"
     end
-    if http_accept.include?("application/json")
+    if @http_accept.include?("application/json")
       "<h1>#{@http_accept}</h1>"
+      response = JSONResponse.new(param, word_search).parse
+      server.client.puts response
+      "<h1>#{word_response}</h1>"
     end
   end
 

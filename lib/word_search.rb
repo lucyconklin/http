@@ -25,4 +25,20 @@ class WordSearch
     result
   end
 
+  def possible_matches(param)
+    dictionary = load_dictionary
+    dictionary.keys.select do |word|
+      word.include?(param.downcase)
+    end
+  end
+
+  def is_word?(param)
+    dictionary = load_dictionary
+    if dictionary[param.downcase]
+      true
+    else
+      false
+    end
+  end
+
 end

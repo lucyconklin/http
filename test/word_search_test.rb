@@ -30,4 +30,14 @@ class WordSearchTest < Minitest::Test
     result = word_search.search("")
     assert_equal " is not a known word", result
   end
+
+  def test_suggested_words
+    result = word_search.possible_matches("pizz")
+    assert_equal ["pizza", "pizzeria", "pizzicato", "pizzle", "spizzerinctum"], result
+  end
+
+  def test_is_word_method
+    result = word_search.is_word?("aa")
+    assert_equal true, result
+  end
 end
