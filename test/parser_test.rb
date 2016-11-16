@@ -1,9 +1,5 @@
-gem 'minitest'
-require './lib/parser'
-require 'minitest/autorun'
-require 'minitest/pride'
-require 'pry'
-require 'faraday'
+require_relative 'test_helper'
+require_relative '../lib/parser'
 
 class ParserTest < Minitest::Test
   attr_reader :request_lines

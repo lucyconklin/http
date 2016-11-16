@@ -1,9 +1,4 @@
-gem 'minitest'
-# require './lib/server'
-require 'minitest/autorun'
-require 'minitest/pride'
-require 'pry'
-require 'faraday'
+require_relative 'test_helper'
 
 class ServerTest < Minitest::Test
 

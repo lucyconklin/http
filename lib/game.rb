@@ -1,7 +1,3 @@
-require 'socket'
-require 'pry'
-# require './lib/server'
-
 class Game
 attr_reader :guess, :guesses, :random_number
 
@@ -12,8 +8,9 @@ attr_reader :guess, :guesses, :random_number
     @guess = 0
   end
 
-  def start
-
+  def start(guess)
+    log_guess(@guess)
+    compare(guess)
   end
 
   def random_number
@@ -33,7 +30,7 @@ attr_reader :guess, :guesses, :random_number
     elsif guess == @random_number
       return "Great Job #{guess} was correct and you win!"
     end
-    log_guess(@guess)
+
   end
 
   def log_guess(guess)

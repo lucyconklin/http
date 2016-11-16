@@ -1,12 +1,25 @@
 require 'socket'
 require 'pry'
+require 'json'
 require './lib/parser'
-require './lib/responder'
 require './lib/game'
 require './lib/word_search'
+require './lib/path'
 
 class HttpServer
-  attr_reader :tcp_server, :client, :open, :hello_count, :shutdown_count, :output, :parsed_response
+  attr_reader :tcp_server,
+              :client,
+              :open,
+              :hello_count,
+              :shutdown_count,
+              :output,
+              :parsed_response,
+              :status_code,
+              :content_length,
+              :http_accept
+
+  attr_accessor :hello_count,
+                :shutdown_count
 
   def initialize
     @tcp_server = TCPServer.new(9292)
@@ -26,44 +39,39 @@ class HttpServer
       while line = client.gets and !line.chomp.empty?
         request_lines << line.chomp
       end
+      @content_length = request_lines[3].split(":")[1].to_i
+      http_accept = request_lines[6].split(":")[1].strip
       puts "Got request"
       parser = Parser.new(request_lines)
       @parsed_response = parser.parse
-      path_response = check_path(parsed_response["Path: "])
+      path = parsed_response["Path: "]
+      verb = parsed_response["Verb: "]
+      param = parsed_response["Param: "]
+        if path == "/game_start" || path == "/game"
+          path_response = game_controller(verb, path)
+          path_status = status_code
+        else
+          path_handler = Path.new(path, verb, self, param, http_accept)
+          path_response = path_handler.direct_path
+          path_status = path_handler.status_code
+        end
 
-      word_response = ""
-      if parsed_response["Param: "]
-        word_search = WordSearch.new
-        word_response = word_search.search(parsed_response["Param: "])
-      end
-
-      if parsed_response["Path: "] == "/game_start"
-        @parsed_response["Verb: "] = "POST"
-      end
-
-      formatted_response = parsed_response.to_a.join("<br>")
+      formatted_response = format_response(parsed_response)
 
       puts "Sending response."
-      @output = "<html><head></head><body>" + "<h1>#{word_response}</h1>"+ "#{path_response}" + "<pre>" "#{formatted_response}" + "</pre>" + "</body></html>"
-
+      @output = "<html><head></head><body>
+                #{path_response}
+                <pre>#{formatted_response}</pre><br>
+                <pre>#{path_status}</pre>
+                </body></html>"
       verb = parsed_response["Verb: "]
       path = parsed_response["Path: "]
+      accept = parsed_response["Accept: "]
       get_headers(verb, path)
       client.puts output
-
+      # client.puts get_headers(verb, path)
       puts "Response complete, exiting.\n"
-      count += 1
-
-      if @shutdown_count == 12
-        tcp_server.close
-      end
-
-      if count > 20
-        tcp_server.close
-      else
-        client.close
-      end
-
+      open_or_close
     end
   end
 
@@ -89,42 +97,45 @@ class HttpServer
                 "content-type: text/html; charset=iso-8859-1",
                 "content-length: #{output.length}\r\n\r\n"].join("\r\n")
     end
-    client.puts headers
   end
 
-  def check_path(path)
-    if path == "/hello"
-      @hello_count += 1
-      "<h1>Hello! #{hello_count}</h1>"
-    elsif path == '/datetime'
-      time = Time.new
-      "<h2>#{time.strftime("%l:%M %p on %A, %d %b %Y")}</h2>"
-    elsif path == '/shutdown'
-      @shutdown_count += 1
-      "<h2>Total Requests #{shutdown_count}</h2>"
-    elsif path == "/kitten"
-      "<img src = 'http://placekitten.com/500/500'>"
-    elsif path == "/god"
-      "<img src = 'https://media.giphy.com/media/G3fPad8N68GfS/giphy.gif'>"
-    elsif path == "/dinosaur"
-      "<img src = 'http://www.reactiongifs.com/r/2013/06/Mother-of_God.gif'>"
-    elsif path.include?("/word_search")
-      "<h1> WORD SEARCH </h1>"
-    elsif path == "/game_start"
+  def format_response(parsed_response)
+    output = parsed_response.map{ |line| line * "" }
+    output.join("\n")
+  end
+
+  def game_controller(verb, path)
+    if path == "/game_start" && verb == "POST"
+      @status_code = "403 Forbidden" if @game == nil
+      @status_code = "301 Moved Permanently"
+      @game = Game.new
+      client.puts @game.interface
       client.puts "<pre>Good luck!</pre>"
-      game = Game.new
-      game.start
-      get_post_content
-    elsif path == "/game"
-      game.interface
-    else
-      "something else"
+    elsif path == "/game" && verb == "GET"
+      @status_code = "200 OK"
+      return "You need to start the Game!" if @game.nil?
+      client.puts @game.interface
+    else path == "/game" && verb == "POST"
+      @status_code = "301 Moved Permanently"
+      return "You need to start the Game!" if @game.nil?
+      guess = get_post_content
+      @game.start(guess)
     end
   end
 
   def get_post_content
-    content_length = @request_lines.length
-    @clent.read content_length.to_i
+    #pull out content_length from request_lines
+    #split on guess and number
+    output = @client.read(content_length)
+    output.split("=")[1].to_i
+  end
+
+  def open_or_close
+    if shutdown_count == 12 || hello_count > 11
+      tcp_server.close
+    else
+      client.close
+    end
   end
 end
 
