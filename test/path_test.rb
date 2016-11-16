@@ -32,10 +32,4 @@ class PathTest < Minitest::Test
   def test_path_error_raises_path_error
     assert_equal String, result.path_error.class
   end
-
-  def test_json_response
-    result2 = Path.new("/","GET","server","pizz","application/json")
-    assert_equal "application/json", result2.http_accept
-    assert_equal "{}", result2.word_search
-  end
 end

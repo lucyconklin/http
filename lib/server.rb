@@ -33,38 +33,32 @@ class HttpServer
 
   def start
     puts "Ready for a request"
-    count = 0
     loop do
       @client = tcp_server.accept
       request_lines = []
       while line = client.gets and !line.chomp.empty?
         request_lines << line.chomp
       end
-      @content_length = request_lines[3].split(":")[1].to_i
       puts "Got request"
+      @content_length = request_lines[3].split(":")[1].to_i
       @parsed_response = Parser.new(request_lines).parse
       path = parsed_response["Path: "]
       verb = parsed_response["Verb: "]
       http_accept = parsed_response["Accept: "]
       param = parsed_response["Param: "]
-        if path == "/game_start" || path == "/game"
-          path_response = game_controller(verb, path)
-          path_status = status_code
-        else
-          path_handler = Path.new(path, verb, self, param, http_accept)
-          path_response = path_handler.direct_path
-          path_status = path_handler.status_code
-        end
+      if path == "/game_start" || path == "/game"
+        path_response = game_controller(verb, path)
+        path_status = status_code
+      else
+        path_handler = Path.new(path, verb, self, param, http_accept)
+        path_response = path_handler.direct_path
+        path_status = path_handler.status_code
+      end
       formatted_response = format_response(parsed_response)
       puts "Sending response."
       @output = "<html><head></head><body>
-                #{path_response}
-                <pre>#{formatted_response}</pre><br>
-                <pre>#{path_status}</pre>
-                </body></html>"
-      verb = parsed_response["Verb: "]
-      path = parsed_response["Path: "]
-      accept = parsed_response["Accept: "]
+                #{path_response}<pre>#{formatted_response}</pre>
+                <br><pre>#{path_status}</pre></body></html>"
       headers = HeaderGenerator.new(verb, path, output.length)
       client.puts output
       puts "Response complete, exiting.\n"
@@ -79,21 +73,32 @@ class HttpServer
 
   def game_controller(verb, path)
     if path == "/game_start" && verb == "POST"
-      @status_code = "403 Forbidden" if @game == nil
-      @status_code = "301 Moved Permanently"
-      @game = Game.new
-      client.puts @game.interface
-      client.puts "<pre>Good luck!</pre>"
+      start_game
     elsif path == "/game" && verb == "GET"
-      @status_code = "200 OK"
-      return "You need to start the Game!" if @game.nil?
-      client.puts @game.interface
+      game_status
     else path == "/game" && verb == "POST"
-      @status_code = "301 Moved Permanently"
-      return "You need to start the Game!" if @game.nil?
-      guess = get_post_content
-      @game.start(guess)
+      game_submit_guess
     end
+  end
+
+  def start_game
+    @status_code = "403 Forbidden" if @game == nil
+    @status_code = "301 Moved Permanently"
+    @game = Game.new
+    client.puts @game.interface
+    client.puts "<pre>Good luck!</pre>"
+  end
+
+  def game_status
+    @status_code = "200 OK"
+    return "You need to start the Game!" if @game.nil?
+    client.puts @game.interface
+  end
+
+  def game_submit_guess
+    @status_code = "301 Moved Permanently"
+    return "You need to start the Game!" if @game.nil?
+    @game.start(get_post_content)
   end
 
   def get_post_content
