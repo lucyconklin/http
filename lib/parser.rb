@@ -1,7 +1,8 @@
 require 'pry'
 
 class Parser
-  attr_reader :request_lines, :hello_count
+  attr_reader :request_lines,
+              :hello_count
 
   def initialize(request_lines)
     @request_lines = request_lines
@@ -10,7 +11,6 @@ class Parser
 
   def parse
     hash = create_hash(request_lines)
-    return hash
   end
 
   def create_hash(request_lines)

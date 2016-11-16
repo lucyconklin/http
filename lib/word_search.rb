@@ -5,10 +5,6 @@ require 'pry'
 class WordSearch
   attr_reader :dictionary
 
-  def initialize
-    # @dictionary = load_dictionary
-  end
-
   def load_dictionary
     dictionary = {}
     File.open("/usr/share/dict/words") do |file|
@@ -19,7 +15,7 @@ class WordSearch
     dictionary
   end
 
-  def search(param)  
+  def search(param)
     dictionary = load_dictionary
     if dictionary[param.downcase]
       result = "#{param} is a known word"
